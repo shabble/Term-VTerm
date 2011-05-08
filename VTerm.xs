@@ -23,7 +23,7 @@ static VTermStateCallbacks cb = {
 
 int term_putglyph_translate
   (const uint32_t chars[], int  width, VTermPos pos, void *user) {
-    term_putglyph(chars, width, pos, user);
+/*    term_putglyph(chars, width, pos, user); */
 }
 
 MODULE = Term::VTerm PACKAGE = Term::VTerm::Callbacks
@@ -131,25 +131,6 @@ CODE:
 OUTPUT:
     RETVAL
 
-AV *
-get_size(vt)
-Term_VTerm vt
-PREINIT:
-int rows;
-int cols;
-SV *sv_rows;
-SV *sv_cols;
-CODE:
-    vterm_get_size(vt, &rows, &cols);
-    # check types first.
-    sv_rows = newSViv(rows);
-    sv_cols = newSViv(cols);
-
-    RETVAL = newAV();
-    av_push(RETVAL, sv_rows);
-    av_push(RETVAL, sv_cols);
-OUTPUT:
-    RETVAL
 
 
 void
@@ -195,11 +176,20 @@ PPCODE:
 # Returns the packed version of the given attribute settings, which are given in
 # the same order as returned by attr_unpack. The packed version will be a
 # binary string not longer than 2 bytes.
-
+# TODO: Do thesee things need to be method calls? Or can they be exported?
 
 void
-attr_pack(fg, bg, bo, fa, st, ul, bl, rv)
-
+attr_pack(vt, fg, bg, bo, fa, st, ul, bl, rv)
+Term_VTerm vt
+char fg
+char bg
+char bo
+char fa
+char st
+char ul
+char bl
+char rv
+PPCODE:
 
 # attr_unpack ($data)
 
@@ -211,7 +201,10 @@ attr_pack(fg, bg, bo, fa, st, ul, bl, rv)
 # underline, blink and reverse respectively.
 
 void
-attr_unpack(data)
+attr_unpack(vt, data)
+Term_VTerm vt
+SV *data
+PPCODE:
 
 # callback_call ($name, $par1, $par2)
 
@@ -220,7 +213,12 @@ attr_unpack(data)
 #     been set with callback_set ().
 
 void
-callback_call(name, param1, param2)
+callback_call(vt, name, param1, param2)
+Term_VTerm vt
+SV *name
+SV *param1
+SV *param2
+PPCODE:
 
 # callback_set ($callback, $ref, $private)
 
@@ -239,9 +237,13 @@ callback_call(name, param1, param2)
 #      XWINTITLE     xterm title name to be changed to arg1
 #      LINEFEED      line feed about to be processed (arg1=row)
 #      GOTO          cursor about to be moved (args=new pos)
-
 void
-callback_set(callback, ref, param2)
+callback_set(vt, callback, ref, param2)
+Term_VTerm vt
+SV *callback
+SV *ref
+SV *param2
+PPCODE:
 
 # option_read ($option)
 
@@ -249,6 +251,11 @@ callback_set(callback, ref, param2)
 #     details), or undef if that option does not exist. Note that you cannot
 #     read the terminal size with this call; use size() for that.
 
+void
+option_read(vt, option)
+Term_VTerm vt
+SV *option
+PPCODE:
 
 # option_set ($option, $value)
 
@@ -263,7 +270,11 @@ callback_set(callback, ref, param2)
 #     (80, 24). The virtual screen is cleared first.
 
 void
-resize(cols, rows)
+resize(vt, cols, rows)
+Term_VTerm vt
+int cols
+int rows
+PPCODE:
 
 # row_attr ($row, [$startcol, $endcol])
 
@@ -285,7 +296,12 @@ resize(cols, rows)
 
 
 void
-row_attr(row, startcol, endcol)
+row_attr(vt, row, startcol, endcol)
+Term_VTerm vt
+int row
+int startcol
+int endcol
+PPCODE:
 
 # row_plaintext ($row, [$startcol, $endcol])
 
@@ -295,7 +311,12 @@ row_attr(row, startcol, endcol)
 #     and $endcol inclusive instead of the whole row.
 
 void
-row_plaintext(row, startcol, endcol)
+row_plaintext(vt, row, startcol, endcol)
+Term_VTerm vt
+int row
+int startcol
+int endcol
+PPCODE:
 
 
 # row_sgrtext ($row, [$startcol, $endcol])
@@ -311,7 +332,12 @@ row_plaintext(row, startcol, endcol)
 #     and preserve all colours, bold, etc.
 
 void
-row_sgrext(row, startcol, endcol)
+row_sgrext(vt, row, startcol, endcol)
+Term_VTerm vt
+int row
+int startcol
+int endcol
+PPCODE:
 
 # sgr_change ($source, $dest)
 
@@ -320,67 +346,114 @@ row_sgrext(row, startcol, endcol)
 #     attributes (see attr_pack). This is used internally by row_sgrtext.
 
 void
-sgr_change(source, dest)
-
+sgr_change(vt, source, dest)
+Term_VTerm vt
+SV *source
+SV *dest
+PPCODE:
 
 # cols ()
 
 #     Return the number of columns in the VT102 object.
 
-int
-cols()
 
+SV *
+cols(vt)
+Term_VTerm vt
+PREINIT:
+int rows;
+int cols;
+CODE:
+    vterm_get_size(vt, &rows, &cols);
+    RETVAL = newSViv(cols);
+OUTPUT:
+    RETVAL
 
 # rows ()
 
 #     Return the number of rows in the VT102 object.
-int
-rows()
+SV *
+rows(vt)
+Term_VTerm vt
+PREINIT:
+int rows;
+int cols;
+CODE:
+    vterm_get_size(vt, &rows, &cols);
+    RETVAL = newSViv(rows);
+OUTPUT:
+    RETVAL
 
 # size ()
-
 #     Return a pair of values (columns,rows) denoting the size of the terminal
 #     in the VT102 object.
 
 void
-size()
+size(vt)
+Term_VTerm vt
+PREINIT:
+int rows;
+int cols;
+SV *sv_rows;
+SV *sv_cols;
+PPCODE:
+    vterm_get_size(vt, &rows, &cols);
+    # check types first.
+    sv_rows = newSViv(rows);
+    sv_cols = newSViv(cols);
+
+    EXTEND(SP, 2);
+    PUSHs(sv_2mortal(sv_cols));
+    PUSHs(sv_2mortal(sv_rows));
+
 
 # x ()
-
 #     Return the current cursor X co-ordinate (1 being leftmost).  Note: It is
 #     possible for the current X co-ordinate to be 1 more than the number of
 #     columns. This happens when the end of a row is reached such that the next
 #     character would wrap on to the next row.
 
 int
-x()
-
+x(vt)
+Term_VTerm vt
+PPCODE:
 
 
 # y ()
-
 #     Return the current cursor Y co-ordinate (1 being topmost).
-
 int
-y()
+y(vt)
+Term_VTerm vt
+PPCODE:
 
 # cursor ()
-
 #     Return the current cursor state (1 being on, 0 being off).
 int
-cursor()
+cursor(vt)
+Term_VTerm vt
+PPCODE:
 
 # xtitle ()
-
 #     Return the current xterm window title.
 SV *
-xtitle()
+xtitle(vt)
+Term_VTerm vt
+CODE:
+    RETVAL = newSV(0);
+OUTPUT:
+    RETVAL
+
 
 # xicon ()
-
 #     Return the current xterm window icon name.
 SV *
-xicon()
+xicon(vt)
+Term_VTerm vt
+CODE:
+    RETVAL = newSV(0);
+OUTPUT:
+    RETVAL
+
 
 # status ()
 
@@ -390,16 +463,23 @@ xicon()
 #     $ic is the xterm window icon name.
 
 void
-status()
+status(vt)
+Term_VTerm vt
+PPCODE:
 
 # version ()
 
 #     Return the version of the Term::VTerm  module being used.
 
 SV *
-version()
+version(vt)
+Term_VTerm vt
+CODE:
+    RETVAL = newSV(0);
+OUTPUT:
+    RETVAL
 
-
+# Destructor, clean up everything.
 void
 DESTROY(vt)
 Term_VTerm vt

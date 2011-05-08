@@ -21,9 +21,9 @@ BEGIN {
     my $str = $vt->test_obj();
     is($str, 'Hello, World!', 'test returns correct value');
 
-    my $size = $vt->get_size();
-    is ($size->[0], 24, 'default rows correct');
-    is ($size->[1], 80, 'default cols correct');
+    my @size = $vt->size();
+    is ($size[0], 80, 'default cols correct');
+    is ($size[1], 24, 'default rows correct');
 
     # $vt->set_thing("Bacon", "Tasty");
     # is ($vt->get_thing("Bacon"), "Tasty", "bacon?");
@@ -32,7 +32,10 @@ BEGIN {
 {
 
     my $vt = new_ok 'Term::VTerm', [rows => 50, cols => 100];
-    is_deeply($vt->get_size, [50, 100], 'correct non-default size');
+    is_deeply([$vt->size], [100, 50], 'correct non-default size');
+    is($vt->cols, 100, 'cols correct');
+    is($vt->rows, 50,  'rows correct');
+
     $vt->set_utf8(1);
 }
 

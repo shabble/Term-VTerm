@@ -3,7 +3,7 @@
 
 int term_putglyph_translate(const uint32_t chars[], int  width, VTermPos pos, void *user);
 
-void term_putglyph(unsigned int *chars, int  width, VTermPos pos, void *user);
+void term_putglyph(const unsigned int *chars, int  width, VTermPos pos, void *user);
 
 int term_movecursor(VTermPos pos, VTermPos oldpos, int visible, void *user);
 
