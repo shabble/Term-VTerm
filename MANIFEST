@@ -1,0 +1,14 @@
+Makefile.PL
+MANIFEST
+MANIFEST.SKIP
+README
+Changes
+t/001-load.t
+t/008-kwalitee.t
+t/009-pod.t
+t/010-pod-coverage.t
+t/099-perl-critic.t
+t/perlcriticrc
+lib/Term/VTerm.pm
+VTerm.xs
+typemap

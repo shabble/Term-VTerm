@@ -1,0 +1,12 @@
+use strict;
+use warnings;
+
+use MooseX::Declare;
+
+class Term::VTerm {
+
+    our $VERSION = '0.03';
+    require XSLoader;
+    XSLoader::load('Term::VTerm', $VERSION);
+}
+
