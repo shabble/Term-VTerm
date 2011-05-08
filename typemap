@@ -1,5 +1,13 @@
 TYPEMAP
 Term_VTerm	T_PTROBJ_SPECIAL
+VTermPos	T_OPAQUE
+VTermRect	T_OPAQUE
+VTermAttr	T_OPAQUE
+VTermProp	T_OPAQUE
+VTermMouseFunc	T_OPAQUE
+VTermValue *	T_OPAQUEPTR
+VTermState *	T_OPAQUEPTR
+unsigned int *	T_PTR
 
 INPUT
 T_PTROBJ_SPECIAL

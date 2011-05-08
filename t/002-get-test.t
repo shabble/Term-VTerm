@@ -33,7 +33,7 @@ BEGIN {
 
     my $vt = new_ok 'Term::VTerm', [rows => 50, cols => 100];
     is_deeply($vt->get_size, [50, 100], 'correct non-default size');
-
+    $vt->set_utf8(1);
 }
 
 done_testing;
