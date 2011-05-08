@@ -16,8 +16,24 @@ BEGIN {
 }
 {
     my $vt = new_ok 'Term::VTerm', [];
-    my $str = $vt->test_obj;
+    ok(defined $vt, 'VT is defined');
+
+    my $str = $vt->test_obj();
     is($str, 'Hello, World!', 'test returns correct value');
+
+    my $size = $vt->get_size();
+    is ($size->[0], 24, 'default rows correct');
+    is ($size->[1], 80, 'default cols correct');
+
+    # $vt->set_thing("Bacon", "Tasty");
+    # is ($vt->get_thing("Bacon"), "Tasty", "bacon?");
+
+}
+{
+
+    my $vt = new_ok 'Term::VTerm', [rows => 50, cols => 100];
+    is_deeply($vt->get_size, [50, 100], 'correct non-default size');
+
 }
 
 done_testing;

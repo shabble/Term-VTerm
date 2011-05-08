@@ -1,32 +1,62 @@
 use strict;
 use warnings;
 
-use MooseX::Declare;
+package Term::VTerm;
 
-class Term::VTerm {
+our $VERSION = '0.03';
+require XSLoader;
+XSLoader::load('Term::VTerm', $VERSION);
 
-    our $VERSION = '0.03';
-    require XSLoader;
-    XSLoader::load('Term::VTerm', $VERSION);
+sub new {
+    my $proto = shift;
+    my $opts = { @_ };
 
-    has '_vt'
-      => (
-          is      => '',
-          isa     => 'Term::VTerm',
-          builder => '_build_vt',
-          clearer => '_clear_vt',
-          lazy    => 1,
-          #handles => [qw/test_obj/ ], #qr/^.*$/,
-         );
+    my $rows = delete $opts->{'rows'};
+    my $cols = delete $opts->{'cols'};
 
-    sub _build_vt {
-        return _create();
-    }
+    $rows = 24 unless defined $rows;
+    $cols = 80 unless defined $cols;
+
+    die "unknown arguments: " . join(", ", keys %$opts) if keys %$opts;
+
+    my $self = _create($rows, $cols);
+
+    return $self;
+}
+
+
+
+
+# sub set_thing {
+#     my ($self, $thing, $val)  = @_;
+#     $self->{$thing} = $val;
+# }
+
+# sub thing {
+#     my ($self, $thing)  = @_;
+#     return $self->{$thing};
+# }
+
+    # has '_vt'
+    #   => (
+    #       is      => '',
+    #       isa     => 'Term::VTerm',
+    #       builder => '_build_vt',
+    #       clearer => '_clear_vt',
+    #       lazy    => 1,
+    #       #handles => [qw/test_obj/ ], #qr/^.*$/,
+    #      );
+
+# sub _build_vt {
+#     return _create();
+# }
     # method test {
     #     return $self->_test;
     # }
 
-}
+#}
+1;
+
 
 __END__
 

@@ -58,7 +58,8 @@ WriteMakefile(
 sub header_loc {
     my $dir = header_found();
     die "Still can't find headers" unless $dir;
-    my $loc =  "-I" . $dir . "/cprops";
+    chomp (my $glib = qx/pkg-config --cflags glib-2.0/);
+    my $loc =  "-I$dir $glib";
     print "Header location is: $loc\n";
     return $loc;
 }
