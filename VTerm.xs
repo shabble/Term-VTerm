@@ -4,10 +4,10 @@
 
 #include <vterm.h>
 #include <vterm_input.h>
+#include "glib.h"
 
 #include "Callbacks.h"
-
-typedef VTerm* Term_VTerm;
+#include "Terminal.h"
 
 static VTermStateCallbacks cb = {
   .putglyph     = term_putglyph_translate,
@@ -21,98 +21,160 @@ static VTermStateCallbacks cb = {
   .bell         = term_bell,
 };
 
-int term_putglyph_translate
-  (const uint32_t chars[], int  width, VTermPos pos, void *user) {
-/*    term_putglyph(chars, width, pos, user); */
+typedef struct {
+     int stuff;
+} cell_attrs;
+
+typedef struct {
+     unsigned int fg_col;
+     unsigned int bg_col;
+     gboolean reverse;
+} term_pen;
+
+typedef struct {
+     unsigned char fg_col;
+     unsigned char bg_col;
+     char  content;
+     cell_attrs attrs;
+} term_cell;
+
+struct _VT_EVERYTHING {
+     term_cell **cells;
+     VTermPos cursor;
+     HV* callbacks;
+};
+
+typedef struct _VT_EVERYTHING VT_EVERYTHING;
+
+static void init_callback_table(VT_EVERYTHING *e) {
+     
+     e->callbacks = newHV();
 }
 
-MODULE = Term::VTerm PACKAGE = Term::VTerm::Callbacks
+static void deinit_callback_table(VT_EVERYTHING *stuff) {
+     hv_undef(stuff->callbacks);
+     Safefree(stuff->callbacks);
+}
 
-PROTOTYPES: ENABLE
+static void perl_add_callback(VT_EVERYTHING s, char *name, SV* func) {
+     hv_store(s->callbacks, name, strlen(name), func, 0);
+}
 
-# int
-# term_putglyph(chars, width, pos, user)
-# unsigned int *chars
-# int width
-# VTermPos pos
-# void *user
-# PPCODE:
+static void perl_del_callback(char *name) {
+}
 
-# int
-# term_movecursor(pos, oldpos, visible, user)
-# VTermPos pos
-# VTermPos oldpos
-# int visible
-# void *user
-# PPCODE:
+static SV* perl_find_callback(VT_EVERYTHING s, char *name) {
+     SV **svpp = hv_fetch(s->callbacks, name, strlen(name), 0);
+     if (svpp != NULL) {
+          SV* svp = *svpp;
+          return svp;
+     } else {
+          croak("Couldn't find a matching callback for %s", name);
+     }
+}
 
-# int
-# term_copyrect(dest, src, user)
-# VTermRect dest
-# VTermRect src
-# void *user
-# PPCODE:
+static void perl_call_callback(char *name, SV* cb_name, SV* cb_param1) {
 
+     SV* callback = perl_find_callback(name);
+     // check its a coderef.
+     if (!SvROK(callback)) {
+          croak("Callback must be a reference");
 
-# int
-# term_copycell(destpos, srcpos, user)
-# VTermPos destpos
-# VTermPos srcpos
-# void *user
-# PPCODE:
+     }
+     if (SvTYPE(SvRV(callback)) != SVt_PVCV) {
+          croak("Callback must be a CODEREF");
+     }
 
+     dSP;
+     int count;
 
-# int
-# term_erase(rect, user)
-# VTermRect rect
-# void *user
-# PPCODE:
+     ENTER;
+     SAVETMPS;
+     PUSHMARK(SP);
 
+     /* params onto stack */
 
-# int
-# term_setpenattr(attr, val, user)
-# VTermAttr attr
-# VTermValue *val
-# void *user
-# PPCODE:
+     XPUSHs(sv_2mortal(newSViv(a)));
+     XPUSHs(sv_2mortal(newSViv(b)));
+     PUTBACK;
 
-# int
-# term_settermprop(prop, val, user);
-# VTermProp prop
-# VTermValue *val
-# void *user
-# PPCODE:
+     count = call_sv(callback, G_EVAL|G_SCALAR);
 
-# int
-# term_setmousefunc(func, data, user)
-# VTermMouseFunc func
-# void *data
-# void *user
-# PPCODE:
+     SPAGAIN;
+     /* Check the eval first */
+     if (SvTRUE(ERRSV)) {
+          printf ("Uh oh - %s\n", SvPV_nolen(ERRSV));
+          POPs;
+     } else {
+          if (count != 1) {
+               croak("call_Subtract: wanted 1 value from 'Subtract', got %d\n",
+                     count);
+          }
+          printf ("%d - %d = %d\n", a, b, POPi);
+     }
+     /* cleanup */
+     PUTBACK;
+     FREETMPS;
+     LEAVE;
+}
 
-# int
-# term_bell(chars, width, pos, user)
-# void *user
-# PPCODE:
+static void init_screen(int rows, int cols) {
+     // allocate some cells space
 
+}
+
+static void deinit_screen() {
+     // free the cell data.
+}
+
+/* int term_putglyph_translate */
+/*   (const uint32_t chars[], int  width, VTermPos pos, void *user) { */
+/* /\*    term_putglyph(chars, width, pos, user); *\/ */
+/* } */
 
 MODULE = Term::VTerm PACKAGE = Term::VTerm
 
 PROTOTYPES: DISABLE
-
-# new (%config)
-
-#     Returns a new VT102 object with options specified in %config (see the
-#     OPTIONS section for details).
 
 Term_VTerm
 _create(rows, cols)
 int rows
 int cols
 CODE:
-    RETVAL = vterm_new(rows, cols);
+     RETVAL =  vterm_new(rows, cols);
 OUTPUT:
     RETVAL
+
+HV *
+init2(vt)
+Term_VTerm vt
+CODE:
+     RETVAL = newHV();
+     sv_2mortal((SV*)RETVAL);
+
+     VT_EVERYTHING *stuff = g_new0(VT_EVERYTHING, 1);
+     init_callback_table(stuff);
+
+     /* const char *term_name = "_term"; */
+     /* const char *stuff_name = "_stuff"; */
+     hv_stores(RETVAL, "_term",  (SV*)vt);
+     hv_stores(RETVAL, "_stuff", (SV*)stuff);
+OUTPUT:
+     RETVAL
+
+Term_VTerm
+get2(hash)
+HV *hash
+CODE:
+    SV **tmp = hv_fetchs(hash, "_term", 0);
+    if (tmp != NULL) {
+         RETVAL = (Term_VTerm)*tmp;
+    } else {
+         croak("Retval is sadly NULL");
+    }
+OUTPUT:
+    RETVAL
+
 
 SV *
 test()
@@ -416,7 +478,7 @@ PPCODE:
 int
 x(vt)
 Term_VTerm vt
-PPCODE:
+CODE:
 
 
 # y ()
@@ -489,3 +551,67 @@ PPCODE:
     # g_free((VTerm*)vt->outbuffer);
     # g_free(vt)
 
+# int
+# term_putglyph(chars, width, pos, user)
+# unsigned int *chars
+# int width
+# VTermPos pos
+# void *user
+# PPCODE:
+
+# int
+# term_movecursor(pos, oldpos, visible, user)
+# VTermPos pos
+# VTermPos oldpos
+# int visible
+# void *user
+# PPCODE:
+
+# int
+# term_copyrect(dest, src, user)
+# VTermRect dest
+# VTermRect src
+# void *user
+# PPCODE:
+
+
+# int
+# term_copycell(destpos, srcpos, user)
+# VTermPos destpos
+# VTermPos srcpos
+# void *user
+# PPCODE:
+
+
+# int
+# term_erase(rect, user)
+# VTermRect rect
+# void *user
+# PPCODE:
+
+
+# int
+# term_setpenattr(attr, val, user)
+# VTermAttr attr
+# VTermValue *val
+# void *user
+# PPCODE:
+
+# int
+# term_settermprop(prop, val, user);
+# VTermProp prop
+# VTermValue *val
+# void *user
+# PPCODE:
+
+# int
+# term_setmousefunc(func, data, user)
+# VTermMouseFunc func
+# void *data
+# void *user
+# PPCODE:
+
+# int
+# term_bell(chars, width, pos, user)
+# void *user
+# PPCODE:

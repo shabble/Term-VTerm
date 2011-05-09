@@ -46,11 +46,11 @@ WriteMakefile(
               PREREQ_PM         => {
                                     'Test::More'        => 0,
                                     'Carp'              => 0,
-                                    'MooseX::Declare'   => 0,
+#                                    'MooseX::Declare'   => 0,
                                    },
               dist                => { COMPRESS => 'gzip -9f', SUFFIX => 'gz', },
               clean               => {
-                                      FILES => 'Term-VTerm-* VTerm.inl'
+                                      FILES => 'Term-VTerm-* VTerm.inl *~ Debian_CPANTS.txt'
                                      },
              );
 

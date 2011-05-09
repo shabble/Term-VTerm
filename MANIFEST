@@ -11,4 +11,6 @@ t/099-perl-critic.t
 t/perlcriticrc
 lib/Term/VTerm.pm
 VTerm.xs
+Terminal.h
+Callbacks.h
 typemap
